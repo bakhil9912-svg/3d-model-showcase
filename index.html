@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="3D Model Showcase - Interactive 3D Model Viewer & Gallery">
+    <title>3D Model Showcase - Interactive 3D Viewer</title>
+    
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- GLTFLoader for loading 3D models -->
+    <script src="https://cdn.jsdelivr.net/npm/three@r128/examples/js/loaders/GLTFLoader.js"></script>
+    
+    <!-- OrbitControls for camera control -->
+    <script src="https://cdn.jsdelivr.net/npm/three@r128/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- Stats.js for performance monitoring -->
+    <script src="https://cdn.jsdelivr.net/npm/stats.js@r17/build/stats.min.js"></script>
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation Header -->
+    <header class="header">
+        <div class="logo">
+            <span class="logo-icon">🎨</span>
+            <span class="logo-text">3D Model Showcase</span>
+        </div>
+        
+        <nav class="nav-menu">
+            <button class="nav-btn active" data-section="gallery">Gallery</button>
+            <button class="nav-btn" data-section="viewer">Viewer</button>
+            <button class="nav-btn" data-section="tools">Tools</button>
+            <button class="nav-btn" data-section="settings">Settings</button>
+            <button class="nav-btn" data-section="help">Help</button>
+        </nav>
+        
+        <div class="header-controls">
+            <button class="icon-btn" id="darkModeToggle" title="Toggle Dark Mode">🌙</button>
+            <button class="icon-btn" id="fullscreenBtn" title="Fullscreen">⛶</button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        
+        <!-- Gallery Section -->
+        <section id="gallery" class="section-content active">
+            <div class="section-header">
+                <h1>3D Model Gallery</h1>
+                <p>Browse and interact with our collection of 3D models</p>
+            </div>
+            
+            <div class="search-filter-container">
+                <input type="text" id="modelSearch" class="search-input" placeholder="Search models...">
+                <select id="categoryFilter" class="filter-select">
+                    <option value="">All Categories</option>
+                    <option value="character">Characters</option>
+                    <option value="object">Objects</option>
+                    <option value="scene">Scenes</option>
+                    <option value="architectural">Architectural</option>
+                    <option value="vehicle">Vehicles</option>
+                </select>
+                <select id="sortSelect" class="filter-select">
+                    <option value="name-asc">Name (A-Z)</option>
+                    <option value="name-desc">Name (Z-A)</option>
+                    <option value="date-new">Newest First</option>
+                    <option value="date-old">Oldest First</option>
+                </select>
+            </div>
+
+            <div class="models-grid" id="modelsGrid">
+                <!-- Models will be dynamically added here -->
+            </div>
+        </section>
+
+        <!-- 3D Viewer Section -->
+        <section id="viewer" class="section-content">
+            <div class="viewer-container">
+                <div class="canvas-container" id="canvasContainer"></div>
+                
+                <div class="viewer-sidebar">
+                    <div class="model-info-panel">
+                        <h3>Model Information</h3>
+                        <div id="modelInfoContent">
+                            <p>Load a model to view details</p>
+                        </div>
+                    </div>
+
+                    <div class="viewer-controls-panel">
+                        <h3>Viewer Controls</h3>
+                        
+                        <div class="control-group">
+                            <label>Background Color</label>
+                            <input type="color" id="bgColorPicker" value="#1a1a2e">
+                        </div>
+
+                        <div class="control-group">
+                            <label>Lighting</label>
+                            <input type="range" id="lightIntensity" min="0.1" max="3" step="0.1" value="1">
+                            <span id="lightValue">100%</span>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Rotation Speed</label>
+                            <input type="range" id="rotationSpeed" min="0" max="2" step="0.1" value="0">
+                        </div>
+
+                        <div class="control-group">
+                            <label>Model Scale</label>
+                            <input type="range" id="scaleControl" min="0.5" max="3" step="0.1" value="1">
+                            <span id="scaleValue">1x</span>
+                        </div>
+
+                        <div class="button-group">
+                            <button class="btn btn-primary" id="resetViewBtn">Reset View</button>
+                            <button class="btn btn-secondary" id="screenshotBtn">📷 Screenshot</button>
+                            <button class="btn btn-secondary" id="downloadBtn">⬇️ Download</button>
+                        </div>
+
+                        <div class="control-group">
+                            <label>
+                                <input type="checkbox" id="wireframeToggle">
+                                Wireframe Mode
+                            </label>
+                        </div>
+
+                        <div class="control-group">
+                            <label>
+                                <input type="checkbox" id="autoRotateToggle">
+                                Auto Rotate
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="animation-panel" id="animationPanel" style="display: none;">
+                        <h3>Animations</h3>
+                        <div id="animationsList"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tools Section -->
+        <section id="tools" class="section-content">
+            <div class="section-header">
+                <h1>3D Tools & Utilities</h1>
+                <p>Advanced tools for model manipulation and analysis</p>
+            </div>
+
+            <div class="tools-grid">
+                <div class="tool-card">
+                    <h3>📐 Model Inspector</h3>
+                    <p>Analyze model geometry, vertices, and faces</p>
+                    <button class="btn btn-primary" id="inspectorBtn">Open Inspector</button>
+                </div>
+
+                <div class="tool-card">
+                    <h3>🎬 Animation Editor</h3>
+                    <p>Edit and preview model animations</p>
+                    <button class="btn btn-primary" id="animEditorBtn">Open Editor</button>
+                </div>
+
+                <div class="tool-card">
+                    <h3>🎨 Material Editor</h3>
+                    <p>Customize materials and textures</p>
+                    <button class="btn btn-primary" id="materialEditorBtn">Open Editor</button>
+                </div>
+
+                <div class="tool-card">
+                    <h3>⚙️ Model Converter</h3>
+                    <p>Convert between 3D file formats</p>
+                    <button class="btn btn-primary" id="converterBtn">Open Converter</button>
+                </div>
+
+                <div class="tool-card">
+                    <h3>📊 Performance Monitor</h3>
+                    <p>Monitor rendering performance and stats</p>
+                    <button class="btn btn-primary" id="statsBtn">Show Stats</button>
+                </div>
+
+                <div class="tool-card">
+                    <h3>🎥 Camera Presets</h3>
+                    <p>Save and load custom camera positions</p>
+                    <button class="btn btn-primary" id="cameraPresetsBtn">Manage Presets</button>
+                </div>
+            </div>
+
+            <div class="tool-section">
+                <h3>📤 Model Upload & Management</h3>
+                <div class="upload-area" id="uploadArea">
+                    <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <h4>Drag & drop 3D models here</h4>
+                    <p>Supported formats: .gltf, .glb, .obj, .fbx</p>
+                    <input type="file" id="fileInput" accept=".glb,.gltf,.obj,.fbx" multiple style="display: none;">
+                </div>
+                <div id="uploadList"></div>
+            </div>
+        </section>
+
+        <!-- Settings Section -->
+        <section id="settings" class="section-content">
+            <div class="section-header">
+                <h1>Settings</h1>
+                <p>Customize your 3D viewer experience</p>
+            </div>
+
+            <div class="settings-grid">
+                <div class="settings-card">
+                    <h3>Display Settings</h3>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="showGridToggle" checked>
+                            Show Grid
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="showAxesToggle" checked>
+                            Show Axes
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="shadowsToggle" checked>
+                            Enable Shadows
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>Anti-aliasing</label>
+                        <select id="aaSelect">
+                            <option value="none">None</option>
+                            <option value="fxaa" selected>FXAA</option>
+                            <option value="ssaa">SSAA</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <h3>Rendering Settings</h3>
+                    <div class="setting-item">
+                        <label>Resolution Scale</label>
+                        <input type="range" id="resolutionScale" min="0.5" max="2" step="0.25" value="1">
+                        <span id="resolutionValue">100%</span>
+                    </div>
+                    <div class="setting-item">
+                        <label>Max FPS</label>
+                        <input type="range" id="maxFPS" min="30" max="144" step="10" value="60">
+                        <span id="fpsValue">60 FPS</span>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="postprocessingToggle" checked>
+                            Enable Post-processing
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <h3>Interface Settings</h3>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="darkModeSettings">
+                            Dark Mode
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="compactUI">
+                            Compact UI
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="showFPS" checked>
+                            Show FPS Counter
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <h3>Advanced Settings</h3>
+                    <div class="setting-item">
+                        <label>Camera FOV</label>
+                        <input type="range" id="cameraFOV" min="30" max="120" step="5" value="75">
+                        <span id="fovValue">75°</span>
+                    </div>
+                    <div class="setting-item">
+                        <button class="btn btn-secondary" id="clearCacheBtn">Clear Cache</button>
+                    </div>
+                    <div class="setting-item">
+                        <button class="btn btn-secondary" id="resetSettingsBtn">Reset to Default</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Help Section -->
+        <section id="help" class="section-content">
+            <div class="section-header">
+                <h1>Help & Documentation</h1>
+                <p>Learn how to use the 3D Model Showcase</p>
+            </div>
+
+            <div class="help-content">
+                <div class="help-card">
+                    <h3>🎮 Camera Controls</h3>
+                    <ul>
+                        <li><strong>Rotate:</strong> Left click + drag</li>
+                        <li><strong>Pan:</strong> Right click + drag or Middle click + drag</li>
+                        <li><strong>Zoom:</strong> Mouse wheel or Pinch</li>
+                        <li><strong>Reset:</strong> Double click or press R</li>
+                    </ul>
+                </div>
+
+                <div class="help-card">
+                    <h3>⌨️ Keyboard Shortcuts</h3>
+                    <ul>
+                        <li><strong>R:</strong> Reset camera view</li>
+                        <li><strong>W:</strong> Wireframe mode</li>
+                        <li><strong>G:</strong> Toggle grid</li>
+                        <li><strong>A:</strong> Toggle axes</li>
+                        <li><strong>T:</strong> Auto-rotate toggle</li>
+                        <li><strong>P:</strong> Take screenshot</li>
+                        <li><strong>F:</strong> Fullscreen</li>
+                    </ul>
+                </div>
+
+                <div class="help-card">
+                    <h3>📁 Supported File Formats</h3>
+                    <ul>
+                        <li><strong>glTF 2.0:</strong> .gltf, .glb (Recommended)</li>
+                        <li><strong>Wavefront OBJ:</strong> .obj</li>
+                        <li><strong>FBX:</strong> .fbx</li>
+                        <li><strong>COLLADA:</strong> .dae</li>
+                    </ul>
+                </div>
+
+                <div class="help-card">
+                    <h3>💡 Tips & Tricks</h3>
+                    <ul>
+                        <li>Use glTF format for best performance and features</li>
+                        <li>Keep model file sizes under 50MB for optimal loading</li>
+                        <li>Use screenshots to save views of your models</li>
+                        <li>Adjust lighting to highlight model details</li>
+                        <li>Enable shadows for better depth perception</li>
+                    </ul>
+                </div>
+
+                <div class="help-card">
+                    <h3>🐛 Troubleshooting</h3>
+                    <ul>
+                        <li><strong>Model doesn't load:</strong> Check file format and size</li>
+                        <li><strong>Textures missing:</strong> Ensure texture files are included</li>
+                        <li><strong>Low performance:</strong> Reduce resolution or disable post-processing</li>
+                        <li><strong>Camera issues:</strong> Reset view and try again</li>
+                    </ul>
+                </div>
+
+                <div class="help-card">
+                    <h3>📧 Support</h3>
+                    <p>For additional help, contact us at: <strong>support@3dshowcase.dev</strong></p>
+                    <p>Visit our GitHub: <strong>github.com/bakhil9912-svg/3d-model-showcase</strong></p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="inspectorModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Model Inspector</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" id="inspectorContent">
+                <p>Load a model to inspect it</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="materialEditorModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Material Editor</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" id="materialEditorContent">
+                <p>Load a model to edit materials</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="notification" id="notification"></div>
+
+    <script src="js/app.js"></script>
+    <script src="js/viewer.js"></script>
+    <script src="js/gallery.js"></script>
+    <script src="js/tools.js"></script>
+    <script src="js/settings.js"></script>
+</body>
+</html>
